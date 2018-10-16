@@ -19,9 +19,6 @@ float ki;
 float kd;
 float desiredSpeed = 3000;                  //P control
 float rpm_speed;                            //this is the speed
-int kpPin = 0;
-int kiPin = 2;
-int kdPin = 4;  
 
 int sensorPin = 0;
 int sensorValue;
@@ -29,6 +26,9 @@ float EMA_a = 1;
 int EMA_S;
 int previousEMA_S;
 int motorSpeed;
+int potValue1;
+int potValue2;
+int potValue3;
 
 void setup() {
  Serial.begin(9600);
@@ -39,6 +39,7 @@ void setup() {
 }
 
 void loop() {
+ getPots();
  digitalWrite(ledPin, HIGH);
  
  timeInterval = (time2-time1)/1000000.0;
@@ -63,9 +64,9 @@ void loop() {
  
  pidDerivative = 1000000 * (error - previous_error) / (timeDerivative2 - timeDerivative1);
 
- kp = analogRead(kpPin) / 1023;
- ki = analogRead(kiPin) / 1023;
- kd = analogRead(kdPin) / 1023;
+ kp = potValue1 / 1023;
+ ki = potValue2 / 1023;
+ kd = potValue3 / 1023;
 
  power = (kp * error) + (ki * pidIntegral) + (kd * pidDerivative);                        //P control: the output of the controller (power) should be Kp*error
  POWER = constrain(70 + power, 10, 150);    //here we tried, 70 is nearly the minimal power to start motor, constrain the power within 50 (lower boundary) and 255 (maximal power), you are free to adjust these 3 numbers, check constrain code in arduino website
