@@ -1,3 +1,5 @@
+#include <math.h>
+
 unsigned long time1[2];
 unsigned long time2[2];
 unsigned long timeIntegral1[2];
@@ -17,17 +19,16 @@ float timeInterval[2];                     //control parameters
 float kp;                                   //P control
 float ki;
 float kd;
-float desiredSpeed = 3000;                  //P control
+float desiredSpeed;;                  //P control
 float rpm_speed[2];                            //this is the speed
 
-int potPin[3] = {A0,A1,A2};
-int sensorValue[3];
-const float EMA_a = 0.2;
-int EMA_S[3];
-int previousEMA_S[3];
-int potValue1;
-int potValue2;
-int potValue3;
+float topPart;
+float bottomPart;
+float xCoordinaat = 2 - 0.2;
+float yCoordinaat = -0.24;
+float alpha = 0.0;
+float velocity;
+float omtrek;
 
 void setup() {
  Serial.begin(9600);
@@ -35,10 +36,20 @@ void setup() {
  attachInterrupt(digitalPinToInterrupt(interruptPin2),rpm2,RISING);
  analogWrite(motorPin[0], 100);                       //here we start the motor, 150 is a guess, you can put other numbers
  analogWrite(motorPin[1], 100);
+
+ topPart = (xCoordinaat * xCoordinaat) * 9.81;
+ bottomPart = (xCoordinaat * sin(2.0 * alpha)) - (2.0 * yCoordinaat * (cos(alpha) * cos(alpha)));
+ velocity = sqrt(topPart/bottomPart);
+ omtrek = 0.047 * 3.14;
+ desiredSpeed = (velocity/omtrek) * 60.0;
+ 
  delay(2000);                               //delay 2 seconds for motor to get some speed
 }
 
 void loop() {
+ Serial.print("Desired RPM: ");
+ Serial.println(desiredSpeed);
+ 
  for(int i=0; i<2; i++){
     timeInterval[i] = (time2[i]-time1[i])/1000000.0;
     rpm_speed[i] = 60.0/timeInterval[i];
@@ -61,24 +72,15 @@ void loop() {
     timeDerivative2[i] = micros();
    
     pidDerivative[i] = 1000000 * (error[i] - previous_error[i]) / (timeDerivative2[i] - timeDerivative1[i]);
-    getPots();
-    kp = analogRead(A0) / 1023.0;
-    ki = analogRead(A1) / 1023.0;
-    kd = analogRead(A2) / 1023.0;
+    
+    kp = 0.0;
+    ki = 0.0;
+    kd = 0.04;
 
     power[i] = (kp * error[i]) + (ki * pidIntegral[i]) + (kd * pidDerivative[i]);                        //P control: the output of the controller (power) should be Kp*error
     POWER[i] = constrain(70 + power[i], 10, 150);    //here we tried, 70 is nearly the minimal power to start motor, constrain the power within 50 (lower boundary) and 255 (maximal power), you are free to adjust these 3 numbers, check constrain code in arduino website
 
     analogWrite(motorPin[i], POWER[i]);              //send the power to the motor
-//    Serial.print("kp: ");
-//    Serial.println(kp);                   //output status to serial monitor
-//    Serial.print("ki: ");
-//    Serial.println(ki);                   //output status to serial monitor
-//    Serial.print("kd: ");
-    Serial.println(kd);                   //output status to serial monitor
-//  Serial.println(rpm_speed[0]);
-    //delay(200);  
-    
  }
 }
 
@@ -92,17 +94,4 @@ void rpm2()
 {
  time1[1] = time2[1];
  time2[1] = micros();
-}
-
-void getPots() {
-  for(int i; i < 3; i++){
-    sensorValue[i] = analogRead(potPin[i]);
-    EMA_S[i] = (EMA_a*sensorValue[i]) + ((1-EMA_a)*EMA_S[i]);
-    if(EMA_S[i] != previousEMA_S[i]){
-      potValue1 = EMA_S[0];
-      potValue2 = EMA_S[1];
-      potValue3 = EMA_S[2];
-      previousEMA_S[i] = EMA_S[i];
-    }
-  }
 }
