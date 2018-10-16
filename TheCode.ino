@@ -20,15 +20,11 @@ float kd;
 float desiredSpeed = 3000;                  //P control
 float rpm_speed;                            //this is the speed
 
-int sensorPin = 0;
-int sensorValue;
-float EMA_a = 1;
-int EMA_S;
-int previousEMA_S;
-int motorSpeed;
-int potValue1;
-int potValue2;
-int potValue3;
+int potPin[3] = {A0,A1,A3};
+int sensorValue[3];
+const float EMA_a = 0.2;
+int EMA_S[3];
+int previousEMA_S[3];
 
 void setup() {
  Serial.begin(9600);
