@@ -20,11 +20,24 @@ float kd;
 float desiredSpeed = 3000;                  //P control
 float rpm_speed;                            //this is the speed
 
+//Variables for potentiometers;
+int potPin[3] = {A0,A1,A3};
+int sensorValue[3];
+const float EMA_a = 0.2;
+int EMA_S[3];
+int previousEMA_S[3];
+
 void setup() {
  Serial.begin(9600);
  pinMode(ledPin, OUTPUT);
  attachInterrupt(digitalPinToInterrupt(interruptPin),rpm,RISING);
  analogWrite(6, 100);                       //here we start the motor, 150 is a guess, you can put other numbers
+ for(int i; i<3; i++)
+  {
+    pinMode(potPin[i], INPUT);
+    analogReadResolution(10);
+    EMA_S[i] = analogRead(potPin[i]);
+  }
  delay(2000);                               //delay 2 seconds for motor to get some speed
 }
 
