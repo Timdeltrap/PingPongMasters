@@ -32,5 +32,4 @@ void getPots() {
       previousEMA_S[i] = EMA_S[i];
     }
   }
-  
 }
