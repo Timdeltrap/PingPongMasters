@@ -37,10 +37,10 @@ void setup() {
  analogWrite(motorPin[0], 100);                       //here we start the motor, 150 is a guess, you can put other numbers
  analogWrite(motorPin[1], 100);
 
- topPart = (xCoordinaat * xCoordinaat) * 9.81;
- bottomPart = (xCoordinaat * sin(2.0 * alpha)) - (2.0 * yCoordinaat * (cos(alpha) * cos(alpha)));
+ topPart = pow(xCoordinaat,2) * 9.81;
+ bottomPart = (xCoordinaat * sin(2.0 * alpha)) - (2.0 * yCoordinaat * pow(cos(alpha),2));
  velocity = sqrt(topPart/bottomPart);
- omtrek = 0.047 * 3.14;
+ omtrek = 0.047 * Pi;
  desiredSpeed = (velocity/omtrek) * 60.0;
  
  delay(2000);                               //delay 2 seconds for motor to get some speed
