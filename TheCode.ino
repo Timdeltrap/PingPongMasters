@@ -38,6 +38,13 @@ float alpha = 0.0;
 float velocity;
 float omtrek;
 
+int potCount = 2;                 // number of potentiometers
+int potPin[potCount] = {A0,A1};   // pins on which the potentiometers are connected 
+int sensorValue[potCount];        // array of measured pot values
+float EMA_a = 0.2;                // Constant in EMA formula
+int EMA_S[potCount];              // Array of Pot values after EMA
+int previousEMA_S[potCount];
+
 void setup() {
  Serial.begin(9600);
  
@@ -109,4 +116,13 @@ void rpm2()
 {
  time1[1] = time2[1];
  time2[1] = micros();
+}
+
+int getPot(int potNum) {
+    sensorValue[potNum] = analogRead(potPin[potNum]);
+    EMA_S[potNum] = (EMA_a*sensorValue[potNum]) + ((1-EMA_a)*EMA_S[potNum]);
+    if(EMA_S[potNum] != previousEMA_S[potNum]){
+      previousEMA_S[potNum] = EMA_S[potNum];
+    }
+    return EMA_S[potNum];
 }
