@@ -1,4 +1,12 @@
+#include <Adafruit_SSD1306.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SPITFT.h>
+#include <Adafruit_SPITFT_Macros.h>
+#include <gfxfont.h>
 #include <math.h>
+
+#define OLED_RESET 4
+Adafruit_SSD1306 display(OLED_RESET);
 
 unsigned long time1[2];
 unsigned long time2[2];
@@ -32,6 +40,13 @@ float omtrek;
 
 void setup() {
  Serial.begin(9600);
+ 
+ display.begin(SSD1306_SWITCHCAPVCC,0x3C);
+ display.clearDisplay();
+ display.setTextSize(1);
+ display.setTextColor(WHITE);
+ display.setCursor(0,0);
+ 
  attachInterrupt(digitalPinToInterrupt(interruptPin1),rpm1,RISING);
  attachInterrupt(digitalPinToInterrupt(interruptPin2),rpm2,RISING);
  analogWrite(motorPin[0], 100);                       //here we start the motor, 150 is a guess, you can put other numbers
