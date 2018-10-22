@@ -62,7 +62,7 @@ void setup() {
  topPart = pow(xCoordinaat,2) * 9.81;
  bottomPart = (xCoordinaat * sin(2.0 * alpha)) - (2.0 * yCoordinaat * pow(cos(alpha),2));
  velocity = sqrt(topPart/bottomPart);
- omtrek = 0.047 * Pi;
+ omtrek = 0.047 * PI;
  desiredSpeed = (velocity/omtrek) * 60.0;
  
  delay(2000);                               //delay 2 seconds for motor to get some speed
