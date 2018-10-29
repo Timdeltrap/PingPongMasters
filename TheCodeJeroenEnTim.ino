@@ -53,12 +53,12 @@ float value1;
 float value2;
 float value3;
 
-int potCount = 2;                 
-int potPin[2] = {A0,A1};    
-int sensorValue[2];        
+int potCount = 1;                 
+int potPin[1] = {A0};    
+int sensorValue[1];        
 float EMA_a = 0.2;                
-int EMA_S[2];             
-int previousEMA_S[2];
+int EMA_S[1];             
+int previousEMA_S[1];
 
 int state = 0;      
 int buttonState;           
@@ -80,37 +80,6 @@ void setup() {
    
    attachInterrupt(digitalPinToInterrupt(interruptPin1),rpm1,RISING);
    attachInterrupt(digitalPinToInterrupt(interruptPin2),rpm2,RISING);
-   
-   if (hoek == 0.00)
-   {
-     factor =  1.146;
-   }
-   else if (hoek == 5.00)
-   {
-     factor = 1.12;
-   }
-   else if (hoek == 10.00)
-   {
-     factor = 1.08;
-   }
-   else if (hoek == 15.00)
-   {
-     factor = 1.15;
-   }
-   else
-   {
-     factor = 1.11;
-   }
-   
-   alpha = ((hoek)*PI) / 180.0;
-   beta = ((3.3+hoek)*PI) / 180.0;
-   xCoordinaat = afstandTarget - ((cos(alpha) * sx0) - (sin(alpha)*sy0));
-   yCoordinaat = -((sin(alpha) * sx0) + (cos(alpha)*sy0)) + hoogteTarget; 
-   topPart = (xCoordinaat * xCoordinaat) * 9.81;
-   bottomPart = (xCoordinaat * sin(2.0 * beta)) - (2.0 * yCoordinaat * (cos(beta)*cos(beta)));
-   velocity = factor * (sqrt(topPart/bottomPart));
-   omtrek = 0.047 * PI;
-   desiredSpeed = (velocity/omtrek) * 60.0;
    
    Serial.print("xcoordinaat: ");
    Serial.println(xCoordinaat);
@@ -161,7 +130,7 @@ void instelMenu(){
    {
         display.clearDisplay();
 
-        value1 = analogRead(0);
+        value1 = getPot(0);
         meter = (map(value1, 0, 1023, 0, 30)) / 10.0;
         display.drawRect(7, 0, 32, 32, WHITE);
         display.fillRect(7, 0, 32, 9, WHITE);
@@ -217,7 +186,7 @@ void instelMenu(){
         display.setCursor(11, 16);
         display.print(meter);
 
-        value2 = analogRead(0);
+        value2 = getPot(0);
         height = (map(value2, 0, 1023, 0, 10)) / 10.0;
         display.fillCircle(45, 18, 3, WHITE);
         display.drawRect(46, 0, 38, 32, WHITE);
@@ -274,7 +243,7 @@ void instelMenu(){
         display.setCursor(52, 16);
         display.print(height);
 
-        value3 = analogRead(0);
+        value3 = getPot(0);
         angle = map(value3, 0, 1023, 0, 25);
         display.fillCircle(90, 18, 3, WHITE);
         display.drawRect(91, 0, 36, 32, WHITE);
@@ -291,7 +260,11 @@ void instelMenu(){
    }
    else if(state == 4)
    {
-        display.clearDisplay();
+      afstandTarget = meter;
+      hoogteTarget = height;
+      hoek = angle;
+      calculateVelocity(afstandTarget, hoogteTarget, hoek);
+      display.clearDisplay();
 
         display.drawRect(7, 0, 120, 32, WHITE);
         display.fillRect(7, 0, 16, 32, WHITE);
@@ -308,10 +281,7 @@ void instelMenu(){
 
         display.display();
    }
-    
-    afstandTarget = meter;
-    hoogteTarget = height;
-    hoek = angle;
+   
 }
 
 void rpm1()
@@ -402,4 +372,37 @@ void balSchieten(){
       Serial.print(rpm_speed[0]);
       Serial.print("---");
       Serial.println(rpm_speed[1]);
+}
+
+void calculateVelocity(float hoek, float meter, float height){
+   if (hoek == 0.00)
+   {
+     factor =  1.146;
+   }
+   else if (hoek == 5.00)
+   {
+     factor = 1.12;
+   }
+   else if (hoek == 10.00)
+   {
+     factor = 1.08;
+   }
+   else if (hoek == 15.00)
+   {
+     factor = 1.15;
+   }
+   else
+   {
+     factor = 1.11;
+   }
+   
+   alpha = ((hoek)*PI) / 180.0;
+   beta = ((3.3+hoek)*PI) / 180.0;
+   xCoordinaat = afstandTarget - ((cos(alpha) * sx0) - (sin(alpha)*sy0));
+   yCoordinaat = -((sin(alpha) * sx0) + (cos(alpha)*sy0)) + hoogteTarget; 
+   topPart = (xCoordinaat * xCoordinaat) * 9.81;
+   bottomPart = (xCoordinaat * sin(2.0 * beta)) - (2.0 * yCoordinaat * (cos(beta)*cos(beta)));
+   velocity = factor * (sqrt(topPart/bottomPart));
+   omtrek = 0.047 * PI;
+   desiredSpeed = (velocity/omtrek) * 60.0;
 }
