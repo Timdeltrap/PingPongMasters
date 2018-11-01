@@ -4,8 +4,11 @@
 #include <Adafruit_SPITFT_Macros.h>
 #include <gfxfont.h>
 #include <math.h>
+#include "ChainableLED.h"
 
+#define NUM_LEDS  1
 #define OLED_RESET 4
+ChainableLED leds(8, 9, NUM_LEDS);
 Adafruit_SSD1306 display(OLED_RESET);
 
 unsigned long time1[2];
@@ -66,9 +69,14 @@ int previousState = LOW;
 long time = 0;         
 long debounce = 200;   
 
+float hue;
+
 void setup() {
    Serial.begin(9600);
    pinMode(4, INPUT);
+   
+   leds.init();
+   
    display.begin(SSD1306_SWITCHCAPVCC,0x3C);
    display.clearDisplay();
    display.setTextSize(1);
@@ -93,6 +101,7 @@ void setup() {
 
 void loop() {
    instelMenu();
+   RGBLED();
 
    Serial.print("Meter: ");
    Serial.print(afstandTarget);
@@ -101,14 +110,50 @@ void loop() {
    Serial.print(" Hoek: ");
    Serial.println(hoek);
    
+   calculateVelocity();
    balSchieten();
  }
+
+void calculateVelocity(){
+   if (hoek == 0.00)
+   {
+     factor =  1.146;
+   }
+   else if (hoek == 5.00)
+   {
+     factor = 1.12;
+   }
+   else if (hoek == 10.00)
+   {
+     factor = 1.08;
+   }
+   else if (hoek == 15.00)
+   {
+     factor = 1.15;
+   }
+   else
+   {
+     factor = 1.11;
+   }
+   
+   alpha = ((hoek)*PI) / 180.0;
+   beta = ((3.3+hoek)*PI) / 180.0;
+   xCoordinaat = afstandTarget - ((cos(alpha) * sx0) - (sin(alpha)*sy0));
+   yCoordinaat = -(((sin(alpha) * sx0) + (cos(alpha)*sy0)) + hoogteTarget); 
+   topPart = (xCoordinaat * xCoordinaat) * 9.81;
+   bottomPart = (xCoordinaat * sin(2.0 * beta)) - (2.0 * yCoordinaat * (cos(beta)*cos(beta)));
+   velocity = factor * (sqrt(topPart/bottomPart));
+   omtrek = 0.047 * PI;
+   desiredSpeed = (velocity/omtrek) * 60.0;
+   
+  }
 
 void instelMenu(){
   getButton();
 
    if(state == 0)
    {
+        hue = 0.3;
         display.clearDisplay();
 
         display.drawRect(7, 0, 120, 32, WHITE);
@@ -128,6 +173,7 @@ void instelMenu(){
    }
    else if(state == 1)
    {
+        hue = 0.0;
         display.clearDisplay();
 
         value1 = getPot(0);
@@ -172,6 +218,7 @@ void instelMenu(){
    }
    else if(state == 2)
    {
+        hue = 0.0;
         display.clearDisplay();
         
         meter = afstandTarget;
@@ -216,6 +263,7 @@ void instelMenu(){
    }
    else if(state == 3)
    {
+        hue = 0.0;
         display.clearDisplay();
         
         meter = afstandTarget;
@@ -260,11 +308,8 @@ void instelMenu(){
    }
    else if(state == 4)
    {
-      afstandTarget = meter;
-      hoogteTarget = height;
-      hoek = angle;
-      calculateVelocity(afstandTarget, hoogteTarget, hoek);
-      display.clearDisplay();
+        hue = 0.3;
+        display.clearDisplay();
 
         display.drawRect(7, 0, 120, 32, WHITE);
         display.fillRect(7, 0, 16, 32, WHITE);
@@ -281,7 +326,10 @@ void instelMenu(){
 
         display.display();
    }
-   
+    
+    afstandTarget = meter;
+    hoogteTarget = height;
+    hoek = angle;
 }
 
 void rpm1()
@@ -306,6 +354,13 @@ int getPot(int potNum)
     }
     return EMA_S[potNum];
 }
+
+void RGBLED(){
+    for (byte a=0; a<NUM_LEDS; a++)
+    {
+      leds.setColorHSB(a, hue, 1.0, 0.5);
+    }
+  }
  
 int getButton() {
   buttonState = digitalRead(7);
@@ -360,7 +415,7 @@ void balSchieten(){
            
             pidDerivative[i] = 1000000 * (error[i] - previous_error[i]) / (timeDerivative2[i] - timeDerivative1[i]);
             
-            kp = 0.0;
+            kp = 0.02;
             ki = 0.0;
             kd = 0.04;
         
@@ -372,37 +427,4 @@ void balSchieten(){
       Serial.print(rpm_speed[0]);
       Serial.print("---");
       Serial.println(rpm_speed[1]);
-}
-
-void calculateVelocity(float hoek, float meter, float height){
-   if (hoek == 0.00)
-   {
-     factor =  1.146;
-   }
-   else if (hoek == 5.00)
-   {
-     factor = 1.12;
-   }
-   else if (hoek == 10.00)
-   {
-     factor = 1.08;
-   }
-   else if (hoek == 15.00)
-   {
-     factor = 1.15;
-   }
-   else
-   {
-     factor = 1.11;
-   }
-   
-   alpha = ((hoek)*PI) / 180.0;
-   beta = ((3.3+hoek)*PI) / 180.0;
-   xCoordinaat = afstandTarget - ((cos(alpha) * sx0) - (sin(alpha)*sy0));
-   yCoordinaat = -((sin(alpha) * sx0) + (cos(alpha)*sy0)) + hoogteTarget; 
-   topPart = (xCoordinaat * xCoordinaat) * 9.81;
-   bottomPart = (xCoordinaat * sin(2.0 * beta)) - (2.0 * yCoordinaat * (cos(beta)*cos(beta)));
-   velocity = factor * (sqrt(topPart/bottomPart));
-   omtrek = 0.047 * PI;
-   desiredSpeed = (velocity/omtrek) * 60.0;
 }
